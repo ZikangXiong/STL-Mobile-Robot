@@ -1,5 +1,5 @@
 xmltodict
-gym
+gym==0.21.0
 mujoco-py
 pybullet
 scipy

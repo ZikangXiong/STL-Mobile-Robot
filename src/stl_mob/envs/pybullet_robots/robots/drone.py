@@ -3,8 +3,8 @@ from xml.etree import ElementTree
 import numpy as np
 import pybullet as p
 import pybullet_data
-from stl_mob.envs.base import WorldBase, RobotBase
 
+from stl_mob.envs.pybullet_robots.base import WorldBase, RobotBase
 from stl_mob.envs.pybullet_robots.robots import ROBOT_ASSETS_PATH
 
 

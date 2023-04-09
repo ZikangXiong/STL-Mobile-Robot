@@ -4,7 +4,7 @@ import numpy as np
 import pybullet as p
 import pybullet_data
 
-from stl_mob.envs.base import ObjID
+from stl_mob.envs.pybullet_robots.base import ObjID
 
 
 class EnvEditor:

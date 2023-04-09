@@ -73,11 +73,14 @@ class Map:
             self.obs_name_list = obs_name_list
 
     @classmethod
-    def generate_map(cls, num_obs: int, pos_range: tuple, obs_size_range: tuple, map_size: tuple = (10, 10)) -> "Map":
+    def generate_map(cls, num_obs: int,
+                     pos_range: tuple[tuple, tuple],
+                     obs_size_range: tuple[tuple, tuple],
+                     map_size: tuple[float, float] = (10., 10.)) -> "Map":
         obs_list = []
         for _ in range(num_obs):
             size = np.random.uniform(*obs_size_range)
-            pos = np.random.uniform(*pos_range, size=2)
+            pos = np.random.uniform(*pos_range)
             obs = Obstacle(pos, size)
             obs_list.append(obs)
         return cls(obs_list, pos_range, obs_size_range, map_size)
