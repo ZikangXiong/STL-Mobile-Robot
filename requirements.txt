@@ -3,3 +3,6 @@ gym
 mujoco-py
 pybullet
 scipy
+stlpy
+gurobipy
+termcolor
