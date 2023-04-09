@@ -2,8 +2,8 @@ import numpy as np
 import pybullet as p
 from scipy.optimize import nnls
 
+from stl_mob.envs.pybullet_robots.robots.drone import Drone
 from ..base import ControllerBase
-from ...robots.drone import Drone
 
 
 class DronePID(ControllerBase):

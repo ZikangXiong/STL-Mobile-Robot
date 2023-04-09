@@ -8,8 +8,6 @@ from stlpy.STL import STLTree
 from stl_mob.stl.stl import STL
 from stl_mob.stl.stl import outside_rectangle_formula, inside_rectangle_formula
 
-INFORMATIVE_NAME = False
-
 
 class Obstacle:
     def __init__(self, pos: np.ndarray, size: np.ndarray):
