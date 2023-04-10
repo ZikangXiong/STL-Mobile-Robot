@@ -27,9 +27,9 @@ def test_pnc():
         env = get_env(robot, task)
         controller = get_controller(robot)
 
-        obs = env.reset()
+        obs = env.reset(init_pos=path[0])
         env.set_goal(np.array([2, 2]))
-        for wp in path:
+        for wp in path[1:]:
             env.set_goal(wp)
             for _ in range(1000):
                 action = controller(obs)

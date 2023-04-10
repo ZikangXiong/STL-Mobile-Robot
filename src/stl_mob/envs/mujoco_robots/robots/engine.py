@@ -803,9 +803,20 @@ class Engine(gym.Env, gym.utils.EzPickle):
         if self.walls_num:
             for i in range(self.walls_num):
                 name = f'wall{i}'
+
+                if isinstance(self.walls_size, int):
+                    wall_size = np.ones(3) * self.walls_size
+                elif isinstance(self.walls_size, list):
+                    assert len(self.walls_size) == self.walls_num
+                    wall_size = np.array(self.walls_size[i])
+                    assert wall_size.shape == (2,)
+                    wall_size = np.r_[wall_size, 0.2]
+                else:
+                    raise ValueError(f'walls_size must be int or list, not {type(self.walls_size)}')
+
                 geom = {'name': name,
-                        'size': np.ones(3) * self.walls_size,
-                        'pos': np.r_[self.layout[name], self.walls_size],
+                        'size': wall_size,
+                        'pos': np.r_[self.layout[name], 0.2],
                         'rot': 0,
                         'type': 'box',
                         'group': GROUP_WALL,

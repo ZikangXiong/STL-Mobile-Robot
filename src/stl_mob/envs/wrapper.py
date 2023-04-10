@@ -31,6 +31,14 @@ class EnvWrapper(ABC):
     def get_pos(self):
         pass
 
+    @abstractmethod
+    def set_pos(self, pos: Union[List, np.ndarray]):
+        pass
+
+    @abstractmethod
+    def get_obs(self) -> np.ndarray:
+        pass
+
     def set_goal(self, goal: Union[List, np.ndarray]):
         self._set_goal(goal)
         self._goal = np.array(goal)
@@ -43,8 +51,11 @@ class EnvWrapper(ABC):
             self.gym_env.render()
         return self.gym_env.step(action)
 
-    def reset(self):
-        return self.gym_env.reset()
+    def reset(self, init_pos: Union[List, np.ndarray] = None):
+        if init_pos is not None:
+            self.gym_env.reset()
+            self.set_pos(init_pos)
+        return self.get_obs()
 
     def reached(self, reach_radius: float = 0.3) -> bool:
         return np.linalg.norm(self.get_pos() - self.get_goal()) < reach_radius
@@ -55,8 +66,13 @@ class MujocoEnv(EnvWrapper, ABC):
 
     BASE_SENSORS = ['accelerometer', 'velocimeter', 'gyro', 'magnetometer']
 
-    def __init__(self, task: TaskBase, enable_gui: bool = True):
-        super(MujocoEnv, self).__init__(task, enable_gui)
+    def get_obs_config(self) -> dict:
+        config = {
+            'walls_num': len(self.task.task_map.obs_list),
+            'walls_locations': [obs.pos for obs in self.task.task_map.obs_list],
+            'walls_size': [obs.size for obs in self.task.task_map.obs_list],
+        }
+        return config
 
     def _set_goal(self, goal: Union[List, np.ndarray]):
         self.gym_env.set_goal_position(goal_xy=goal[:2])
@@ -64,17 +80,8 @@ class MujocoEnv(EnvWrapper, ABC):
     def get_pos(self) -> np.ndarray:
         return np.array(self.gym_env.robot_pos[:2])
 
-
-class PybulletEnv(EnvWrapper, ABC):
-    def __init__(self, task: TaskBase, enable_gui: bool = True):
-        super(PybulletEnv, self).__init__(task, enable_gui)
-
-    def _set_goal(self, goal: Union[List, np.ndarray]):
-        pass
-
-    def get_pos(self) -> np.ndarray:
-        # np.array(p.getBasePositionAndOrientation(self.robot_id, self.client_id)[0])
-        pass
+    def get_obs(self) -> np.ndarray:
+        return self.gym_env.obs()
 
 
 class PointEnv(MujocoEnv):
@@ -86,7 +93,16 @@ class PointEnv(MujocoEnv):
             'observe_com': False,
             'observe_goal_comp': True
         }
+        wall_config = self.get_obs_config()
+        config.update(wall_config)
+
         return Engine(config)
+
+    def set_pos(self, pos: Union[List, np.ndarray]):
+        body_id = self.gym_env.sim.model.body_name2id('robot')
+        self.gym_env.sim.model.body_pos[body_id][:2] = pos
+        self.gym_env.sim.data.body_xpos[body_id][:2] = pos
+        self.gym_env.sim.forward()
 
 
 class CarEnv(MujocoEnv):
@@ -101,7 +117,18 @@ class CarEnv(MujocoEnv):
             'box_keepout': 0.125,  # Box keepout radius for placement
             'box_density': 0.0005
         }
+        wall_config = self.get_obs_config()
+        config.update(wall_config)
+
         return Engine(config)
+
+    def set_pos(self, pos: Union[List, np.ndarray]):
+        indx = self.gym_env.sim.model.get_joint_qpos_addr("robot")
+        sim_state = self.gym_env.sim.get_state()
+
+        sim_state.qpos[indx[0]:indx[0] + 2] = pos
+        self.gym_env.sim.set_state(sim_state)
+        self.gym_env.sim.forward()
 
 
 class DoggoEnv(MujocoEnv):
@@ -123,13 +150,38 @@ class DoggoEnv(MujocoEnv):
             'observe_com': False,
             'observe_goal_comp': True
         }
+
+        wall_config = self.get_obs_config()
+        config.update(wall_config)
+
         return Engine(config)
 
+    def set_pos(self, pos: Union[List, np.ndarray]):
+        indx = self.gym_env.sim.model.get_joint_qpos_addr("robot")
+        sim_state = self.gym_env.sim.get_state()
 
-class DroneEnv(PybulletEnv):
+        sim_state.qpos[indx[0]:indx[0] + 2] = pos
+        self.gym_env.sim.set_state(sim_state)
+        self.gym_env.sim.forward()
+
+
+class DroneEnv(EnvWrapper):
 
     def build_env(self) -> gym.Env:
         return BulletEnv(Drone(enable_gui=self.enable_gui))
+
+    def _set_goal(self, goal: Union[List, np.ndarray]):
+        pass
+
+    def get_pos(self) -> np.ndarray:
+        # np.array(p.getBasePositionAndOrientation(self.robot_id, self.client_id)[0])
+        pass
+
+    def set_pos(self, pos: Union[List, np.ndarray]):
+        pass
+
+    def get_obs(self) -> np.ndarray:
+        pass
 
 
 def get_env(env_name: str, task: TaskBase, enable_gui: bool = True):
