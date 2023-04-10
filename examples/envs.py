@@ -2,7 +2,7 @@ from stl_mob.envs.wrapper import PointEnv, CarEnv, DoggoEnv, DroneEnv
 from stl_mob.stl.tasks import SequenceTask, Map
 
 
-def test_all_env_render():
+def test_all_env_render_and_step():
     task_map = Map.generate_map(5,
                                 pos_range=((-5, -5), (5, 5)),
                                 obs_size_range=((1, 1), (2, 2)),
@@ -21,4 +21,4 @@ def test_all_env_render():
 
 
 if __name__ == '__main__':
-    test_all_env_render()
+    test_all_env_render_and_step()
