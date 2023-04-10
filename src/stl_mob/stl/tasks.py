@@ -10,10 +10,13 @@ from stl_mob.stl.stl import outside_rectangle_formula, inside_rectangle_formula
 
 
 class Obstacle:
-    def __init__(self, pos: np.ndarray, size: np.ndarray):
+    def __init__(self, pos: np.ndarray, size: np.ndarray, keepout: float = 0.3):
         self.pos = pos
         self.size = size
-        self.bound = np.stack([self.pos - self.size / 2, self.pos + self.size / 2]).T.flatten()
+        self.keepout = keepout
+        self.bound = np.stack([self.pos - (self.size + self.keepout) / 2,
+                               self.pos + (self.size + self.keepout) / 2]).T.flatten()
+
         self.spec = None
 
     def get_spec(self, name: str = None):
@@ -24,7 +27,7 @@ class Obstacle:
         return self.spec
 
     def contains(self, pos: np.ndarray):
-        return np.all(np.abs(pos - self.pos) < self.size / 2 - 1e-3)
+        return np.all(np.abs(pos - self.pos) < (self.size + self.keepout) / 2 - 1e-3)
 
     def __repr__(self):
         return f"obs(pos={self.pos}, size={self.size})"
@@ -104,7 +107,7 @@ class Map:
 
     def inside_obs(self, pos: np.ndarray) -> bool:
         for obs in self.obs_list:
-            if np.all(pos >= obs.pos - obs.size / 2) and np.all(pos <= obs.pos + obs.size / 2):
+            if obs.contains(pos):
                 return True
         return False
 
