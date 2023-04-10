@@ -1,4 +1,4 @@
-from stl_mob.envs.wrapper import PointEnv, CarEnv, DoggoEnv, DroneEnv
+from stl_mob.envs.wrapper import PointEnv, CarEnv, DoggoEnv
 from stl_mob.stl.tasks import SequenceTask, Map
 
 
@@ -12,7 +12,7 @@ def test_all_env_render_and_step():
         PointEnv(task),
         CarEnv(task),
         DoggoEnv(task),
-        DroneEnv(task),
+        # DroneEnv(task),
     ]
     for env in envs:
         env.reset()

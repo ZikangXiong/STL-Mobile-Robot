@@ -27,11 +27,15 @@ class EnvWrapper(ABC):
     def build_env(self) -> Union[Engine, BulletEnv]:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_pos(self):
+        pass
+
     def set_goal(self, goal: Union[List, np.ndarray]):
         self._set_goal(goal)
         self._goal = np.array(goal)
 
-    def get_goal(self):
+    def get_goal(self) -> np.ndarray:
         return self._goal
 
     def step(self, action: Union[List, np.ndarray]):
@@ -41,6 +45,9 @@ class EnvWrapper(ABC):
 
     def reset(self):
         return self.gym_env.reset()
+
+    def reached(self, reach_radius: float = 0.3) -> bool:
+        return np.linalg.norm(self.get_pos() - self.get_goal()) < reach_radius
 
 
 class MujocoEnv(EnvWrapper, ABC):
@@ -54,12 +61,19 @@ class MujocoEnv(EnvWrapper, ABC):
     def _set_goal(self, goal: Union[List, np.ndarray]):
         self.gym_env.set_goal_position(goal_xy=goal[:2])
 
+    def get_pos(self) -> np.ndarray:
+        return np.array(self.gym_env.robot_pos[:2])
+
 
 class PybulletEnv(EnvWrapper, ABC):
     def __init__(self, task: TaskBase, enable_gui: bool = True):
         super(PybulletEnv, self).__init__(task, enable_gui)
 
     def _set_goal(self, goal: Union[List, np.ndarray]):
+        pass
+
+    def get_pos(self) -> np.ndarray:
+        # np.array(p.getBasePositionAndOrientation(self.robot_id, self.client_id)[0])
         pass
 
 
