@@ -74,6 +74,26 @@ class MujocoEnv(EnvWrapper, ABC):
         }
         return config
 
+    @abstractmethod
+    def get_robot_config(self) -> dict:
+        pass
+
+    def build_env(self) -> Engine:
+        config = self.get_robot_config()
+        config.update(self.get_obs_config())
+        gym_env = Engine(config)
+
+        def add_wp_marker(pos: Union[List, np.ndarray]):
+            gym_env.add_render_callback(lambda: gym_env.render_sphere(pos=pos,
+                                                                      size=0.3,
+                                                                      color=(0, 1, 1, 0.5),
+                                                                      alpha=0.5))
+
+        for wp in self.wp_list:
+            add_wp_marker(wp.pos)
+
+        return gym_env
+
     def _set_goal(self, goal: Union[List, np.ndarray]):
         self.gym_env.set_goal_position(goal_xy=goal[:2])
 
@@ -86,17 +106,13 @@ class MujocoEnv(EnvWrapper, ABC):
 
 class PointEnv(MujocoEnv):
 
-    def build_env(self) -> gym.Env:
-        config = {
+    def get_robot_config(self) -> dict:
+        return {
             "robot_base": f"xmls/point.xml",
             'sensors_obs': self.BASE_SENSORS,
             'observe_com': False,
             'observe_goal_comp': True
         }
-        wall_config = self.get_obs_config()
-        config.update(wall_config)
-
-        return Engine(config)
 
     def set_pos(self, pos: Union[List, np.ndarray]):
         body_id = self.gym_env.sim.model.body_name2id('robot')
@@ -107,8 +123,8 @@ class PointEnv(MujocoEnv):
 
 class CarEnv(MujocoEnv):
 
-    def build_env(self) -> gym.Env:
-        config = {
+    def get_robot_config(self) -> dict:
+        return {
             "robot_base": f"xmls/car.xml",
             'sensors_obs': self.BASE_SENSORS,
             'observe_com': False,
@@ -117,10 +133,6 @@ class CarEnv(MujocoEnv):
             'box_keepout': 0.125,  # Box keepout radius for placement
             'box_density': 0.0005
         }
-        wall_config = self.get_obs_config()
-        config.update(wall_config)
-
-        return Engine(config)
 
     def set_pos(self, pos: Union[List, np.ndarray]):
         indx = self.gym_env.sim.model.get_joint_qpos_addr("robot")
@@ -133,7 +145,7 @@ class CarEnv(MujocoEnv):
 
 class DoggoEnv(MujocoEnv):
 
-    def build_env(self) -> gym.Env:
+    def get_robot_config(self) -> dict:
         extra_sensor = [
             'touch_ankle_1a',
             'touch_ankle_2a',
@@ -144,17 +156,12 @@ class DoggoEnv(MujocoEnv):
             'touch_ankle_3b',
             'touch_ankle_4b'
         ]
-        config = {
+        return {
             "robot_base": f"xmls/doggo.xml",
             'sensors_obs': self.BASE_SENSORS + extra_sensor,
             'observe_com': False,
             'observe_goal_comp': True
         }
-
-        wall_config = self.get_obs_config()
-        config.update(wall_config)
-
-        return Engine(config)
 
     def set_pos(self, pos: Union[List, np.ndarray]):
         indx = self.gym_env.sim.model.get_joint_qpos_addr("robot")
