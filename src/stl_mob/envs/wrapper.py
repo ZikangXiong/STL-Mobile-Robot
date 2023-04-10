@@ -83,14 +83,14 @@ class MujocoEnv(EnvWrapper, ABC):
         config.update(self.get_obs_config())
         gym_env = Engine(config)
 
-        def add_wp_marker(pos: Union[List, np.ndarray]):
+        def add_wp_marker(pos: Union[List, np.ndarray], size: float):
             gym_env.add_render_callback(lambda: gym_env.render_sphere(pos=pos,
-                                                                      size=0.3,
+                                                                      size=size,
                                                                       color=(0, 1, 1, 0.5),
                                                                       alpha=0.5))
 
         for wp in self.wp_list:
-            add_wp_marker(wp.pos)
+            add_wp_marker(wp.pos, wp.size)
 
         return gym_env
 
@@ -191,14 +191,14 @@ class DroneEnv(EnvWrapper):
         pass
 
 
-def get_env(env_name: str, task: TaskBase, enable_gui: bool = True):
-    if env_name == "drone":
+def get_env(robot_name: str, task: TaskBase, enable_gui: bool = True):
+    if robot_name == "drone":
         return DroneEnv(task, enable_gui)
-    elif env_name == "point":
+    elif robot_name == "point":
         return PointEnv(task, enable_gui)
-    elif env_name == "car":
+    elif robot_name == "car":
         return CarEnv(task, enable_gui)
-    elif env_name == "doggo":
+    elif robot_name == "doggo":
         return DoggoEnv(task, enable_gui)
     else:
-        raise ValueError(f"Env {env_name} not found")
+        raise ValueError(f"Env {robot_name} not found")

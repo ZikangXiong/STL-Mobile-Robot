@@ -3,15 +3,10 @@ import numpy as np
 from stl_mob.ctrl.wrapper import get_controller
 from stl_mob.envs.wrapper import get_env
 from stl_mob.stl.solver import StlpySolver
-from stl_mob.stl.tasks import SequenceTask, Map
+from stl_mob.stl.tasks import Map, SequenceTask
 
 
 def test_pnc():
-    task_map = Map.generate_map(5,
-                                pos_range=((-3, -3), (3, 3)),
-                                obs_size_range=((0.1, 0.1), (0.5, 0.5)),
-                                map_size=(10., 10.))
-    task = SequenceTask.generate_task(task_map, num_wp=4)
     robots = [
         'point',
         'car',
@@ -20,8 +15,16 @@ def test_pnc():
     ]
 
     solver = StlpySolver(space_dim=2)
-    spec = task.get_spec().get_stlpy_form()
-    path, info = solver.solve_stlpy_formula(spec, task.sample_init_pos(), task.total_time_steps)
+
+    path = None
+    while path is None:
+        task_map = Map.generate_map(5,
+                                    pos_range=((-3, -3), (3, 3)),
+                                    obs_size_range=((0.1, 0.1), (0.5, 0.5)),
+                                    map_size=(10., 10.))
+        task = SequenceTask.generate_task(task_map, num_wp=4)
+        spec = task.get_spec().get_stlpy_form()
+        path, info = solver.solve_stlpy_formula(spec, task.sample_init_pos(), task.total_time_steps)
 
     for robot in robots:
         env = get_env(robot, task)
