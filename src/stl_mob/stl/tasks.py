@@ -1,16 +1,16 @@
 from abc import ABC, abstractmethod
+from functools import reduce
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Rectangle
 from stlpy.STL import STLTree
 
-from stl_mob.stl.stl import STL
-from stl_mob.stl.stl import outside_rectangle_formula, inside_rectangle_formula
+from stl_mob.stl.stl import STL, inside_rectangle_formula, outside_rectangle_formula
 
 
 class Obstacle:
-    def __init__(self, pos: np.ndarray, size: np.ndarray, keepout: float = 0.3):
+    def __init__(self, pos: np.ndarray, size: np.ndarray, keepout: float = 0.1):
         self.pos = pos
         self.size = size
         self.keepout = keepout
@@ -18,13 +18,25 @@ class Obstacle:
                                self.pos + (self.size + self.keepout) / 2]).T.flatten()
 
         self.spec = None
+        self.neg_spec = None
 
-    def get_spec(self, name: str = None):
-        if name is None:
-            name = str(self)
+    def get_spec(self, obs_name: str = None):
+        if obs_name is None:
+            obs_name = str(self)
         if self.spec is None:
-            self.spec = STL(outside_rectangle_formula(self.bound, 0, 1, 2, name=name))
+            self.spec = STL(outside_rectangle_formula(self.bound, 0, 1, 2, name=obs_name))
         return self.spec
+
+    def workaround_not(self, obs_name: str = None):
+        if obs_name is None:
+            obs_name = str(self)
+        if self.neg_spec is None:
+            self.neg_spec = STL(inside_rectangle_formula(self.bound, 0, 1, 2, name=obs_name))
+        return self.neg_spec
+
+    def workaround_implies(self, other: STL, obs_name: str = None):
+        neg_spec = self.workaround_not(obs_name=obs_name)
+        return neg_spec | other
 
     def contains(self, pos: np.ndarray):
         return np.all(np.abs(pos - self.pos) < (self.size + self.keepout) / 2 - 1e-3)
@@ -39,13 +51,25 @@ class Waypoint:
         self.size = size
         self.bound = np.stack([self.pos - self.size / 2, self.pos + self.size / 2]).T.flatten()
         self.spec = None
+        self.neg_spec = None
 
-    def get_spec(self, name: str = None):
-        if name is None:
-            name = str(self)
+    def get_spec(self, wp_name: str = None):
+        if wp_name is None:
+            wp_name = str(self)
         if self.spec is None:
-            self.spec = STL(inside_rectangle_formula(self.bound, 0, 1, 2, name=name))
+            self.spec = STL(inside_rectangle_formula(self.bound, 0, 1, 2, name=wp_name))
         return self.spec
+
+    def workaround_not(self, wp_name: str = None):
+        if wp_name is None:
+            wp_name = str(self)
+        if self.neg_spec is None:
+            self.neg_spec = STL(outside_rectangle_formula(self.bound, 0, 1, 2, name=wp_name))
+        return self.neg_spec
+
+    def workaround_implies(self, other: STL, wp_name: str = None):
+        neg_spec = self.workaround_not(wp_name=wp_name)
+        return neg_spec | other
 
     def contains(self, pos: np.ndarray):
         return np.all(np.abs(pos - self.pos) < self.size / 2 + 1e-3)
@@ -89,9 +113,9 @@ class Map:
         return cls(obs_list, pos_range, obs_size_range, map_size)
 
     def get_spec(self) -> STLTree:
-        spec = self.obs_list[0].get_spec(name=self.obs_name_list[0])
+        spec = self.obs_list[0].get_spec(obs_name=self.obs_name_list[0])
         for obs, obs_name in zip(self.obs_list[1:], self.obs_name_list[1:]):
-            spec = spec & obs.get_spec(name=obs_name)
+            spec = spec & obs.get_spec(obs_name=obs_name)
         return spec
 
     def plot(self) -> tuple[plt.Figure, plt.Axes]:
@@ -269,5 +293,29 @@ class SignalTask(TaskBase):
 
         collision_spec = self.task_map.get_spec().always(0, self.total_time_steps)
         spec = signal_spec & collision_spec
+
+        return spec
+
+
+class AltCoverTask(TaskBase):
+    def _get_spec(self):
+        # STL spec like F[0,28]B&G[0,28](B=>F[0,28]C)&G[0,28](C=>F[0,28]A)&G[0,28]~obs
+        all_wps_specs = [wp.get_spec(self.wp_name_list[i]) for i, wp in enumerate(self.wp_list)]
+        all_neg_wps_specs = [wp.workaround_not("~" + self.wp_name_list[i]) for i, wp in enumerate(self.wp_list)]
+        better_cover_spec = all_wps_specs[0].eventually(0, self.total_time_steps)
+        for i in range(1, len(self.wp_list)):
+            better_cover_spec &= all_wps_specs[i].eventually(0, self.total_time_steps)
+
+        seq_spec = reduce(lambda x, y: x & y, all_neg_wps_specs[1:]).until(all_wps_specs[0], 0, self.total_time_steps)
+        for i in range(1, len(self.wp_list) - 1):
+            seq_spec |= reduce(
+                lambda x, y: x & y,
+                all_neg_wps_specs[i + 1:]).until(
+                all_wps_specs[i], 0, self.total_time_steps)
+
+        better_cover_spec &= seq_spec
+
+        collision_spec = self.task_map.get_spec().always(0, self.total_time_steps)
+        spec = better_cover_spec & collision_spec
 
         return spec
