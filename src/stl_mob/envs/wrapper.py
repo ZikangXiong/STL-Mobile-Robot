@@ -52,8 +52,8 @@ class EnvWrapper(ABC):
         return self.gym_env.step(action)
 
     def reset(self, init_pos: Union[List, np.ndarray] = None):
+        self.gym_env.reset()
         if init_pos is not None:
-            self.gym_env.reset()
             self.set_pos(init_pos)
         return self.get_obs()
 
@@ -67,6 +67,11 @@ class EnvWrapper(ABC):
 class MujocoEnv(EnvWrapper, ABC):
     BASE_SENSORS = ['accelerometer', 'velocimeter', 'gyro', 'magnetometer']
 
+    def __init__(self, task: TaskBase, enable_gui: bool = True):
+        super().__init__(task, enable_gui)
+        for wp in self.task.wp_list:
+            self.add_wp_marker(wp.pos, wp.size)
+
     def get_obs_config(self) -> dict:
         config = {
             'walls_num': len(self.task.task_map.obs_list),
@@ -79,19 +84,21 @@ class MujocoEnv(EnvWrapper, ABC):
     def get_robot_config(self) -> dict:
         pass
 
+    def add_wp_marker(self,
+                      pos: Union[List, np.ndarray],
+                      size: float, color=(0, 1, 1, 0.5),
+                      alpha=0.5,
+                      label: str = ""):
+        self.gym_env.add_render_callback(lambda: self.gym_env.render_sphere(pos=pos,
+                                                                            size=size,
+                                                                            color=color,
+                                                                            alpha=alpha,
+                                                                            label=label))
+
     def build_env(self) -> Engine:
         config = self.get_robot_config()
         config.update(self.get_obs_config())
         gym_env = Engine(config)
-
-        def add_wp_marker(pos: Union[List, np.ndarray], size: float):
-            gym_env.add_render_callback(lambda: gym_env.render_sphere(pos=pos,
-                                                                      size=size,
-                                                                      color=(0, 1, 1, 0.5),
-                                                                      alpha=0.5))
-
-        for wp in self.wp_list:
-            add_wp_marker(wp.pos, wp.size)
 
         return gym_env
 

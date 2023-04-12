@@ -82,13 +82,11 @@ class Map:
     def __init__(self,
                  obs_list: list[Obstacle],
                  pos_range: tuple,
-                 obs_size_range: tuple,
                  map_size: tuple,
                  obs_name_list: str = None,
                  shuffle_obs_name: bool = True):
         self.obs_list = obs_list
         self.pos_range = pos_range
-        self.obs_size_range = obs_size_range
         self.map_size = map_size
         self.shuffle_obs_name = shuffle_obs_name
 
