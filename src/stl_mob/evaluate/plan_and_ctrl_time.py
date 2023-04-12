@@ -1,13 +1,17 @@
+import os
+
 import numpy as np
+from gym.wrappers import Monitor
 
 from stl_mob.ctrl.wrapper import get_controller
 from stl_mob.envs.wrapper import get_env
 from stl_mob.stl.solver import StlpySolver
 from stl_mob.stl.tasks import TaskBase
+from stl_mob.utils import DATA_DIR
 
 
 class TimeEvaluator:
-    def __init__(self, task: TaskBase, robot_name: str, enable_gui: bool = True):
+    def __init__(self, task: TaskBase, robot_name: str, enable_gui: bool = True, store_video: bool = False):
         self.space_dims = {
             "point": 2,
             "car": 2,
@@ -18,6 +22,7 @@ class TimeEvaluator:
         self.task = task
         self.robot_name = robot_name
         self.enable_gui = enable_gui
+        self.store_video = store_video
 
         self.env = get_env(self.robot_name, self.task, self.enable_gui)
         self.solver = StlpySolver(space_dim=self.space_dims[self.robot_name])
@@ -32,8 +37,14 @@ class TimeEvaluator:
         return path, solve_time
 
     def ctrl(self, path: np.ndarray, max_wp_step: int = 300) -> float:
-        obs = self.env.reset(init_pos=path[0])
         total_time = 0
+
+        if self.store_video:
+            save_dir = f"{DATA_DIR}/videos/{self.robot_name}_{type(self.task).__name__.lower()}"
+            os.makedirs(save_dir, exist_ok=True)
+            self.env.gym_env = Monitor(self.env.gym_env, save_dir, force=True)
+
+        obs = self.env.reset(init_pos=path[0])
         for wp in path[1:]:
             self.env.set_goal(wp)
             t = 0

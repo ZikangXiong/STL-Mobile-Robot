@@ -87,9 +87,9 @@ def test_alt_cover_task_sol():
 
 
 if __name__ == "__main__":
-    # test_seq_task_sol()
-    # test_cover_task_sol()
-    # test_branch_task_sol()
-    # test_loop_task_sol()
-    # test_signal_task_sol()
+    test_seq_task_sol()
+    test_cover_task_sol()
+    test_branch_task_sol()
+    test_loop_task_sol()
+    test_signal_task_sol()
     test_alt_cover_task_sol()

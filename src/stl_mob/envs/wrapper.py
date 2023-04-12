@@ -60,10 +60,11 @@ class EnvWrapper(ABC):
     def reached(self, reach_radius: float = 0.3) -> bool:
         return np.linalg.norm(self.get_pos() - self.get_goal()) < reach_radius
 
+    def close(self):
+        self.gym_env.close()
+
 
 class MujocoEnv(EnvWrapper, ABC):
-    metadata = {"render.modes": ["human", "rgb_array"]}
-
     BASE_SENSORS = ['accelerometer', 'velocimeter', 'gyro', 'magnetometer']
 
     def get_obs_config(self) -> dict:

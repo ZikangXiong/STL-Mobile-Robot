@@ -93,6 +93,8 @@ class Engine(gym.Env, gym.utils.EzPickle):
 
     '''
 
+    metadata = {"render.modes": ["human", "rgb_array"]}
+
     # Default configuration (this should not be nested since it gets copied)
     DEFAULT = {
         'num_steps': 1000,  # Maximum number of environment steps in an episode
@@ -320,6 +322,9 @@ class Engine(gym.Env, gym.utils.EzPickle):
 
         # Random state seed (avoid name conflict with self.seed)
         '_seed': None,
+
+        # Never Done
+        'never_done': True,
     }
 
     def __init__(self, config={}):
@@ -1413,7 +1418,7 @@ class Engine(gym.Env, gym.utils.EzPickle):
         if self.steps >= self.num_steps:
             self.done = True  # Maximum number of steps in an episode reached
 
-        return self.obs(), reward, self.done, info
+        return self.obs(), reward, False if self.never_done else self.done, info
 
     def reward(self, keep_last=False):
         ''' Calculate the dense component of reward.  Call exactly once per step '''
@@ -1668,4 +1673,7 @@ class Engine(gym.Env, gym.utils.EzPickle):
 
     def close(self):
         if self.viewer is not None:
-            glfw.destroy_window(self.viewer.window)
+            try:
+                glfw.destroy_window(self.viewer.window)
+            except AttributeError:
+                pass
