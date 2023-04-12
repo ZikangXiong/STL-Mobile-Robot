@@ -17,9 +17,15 @@ pos=[-2.73984922 -0.14574555], size=0.5), wp(pos=[2.0591308  1.65148679], size=0
 
 We can get the following map and control trajectory:
 
+
+https://user-images.githubusercontent.com/73256697/231562114-f19982c7-94fb-4b26-856a-1fbda30975b7.mp4
+
+
 With planning time 2.755s and control time steps 760.
+```
 Planning time:  2.755
 Control time steps: 760
+```
 
 ## Installation
 
