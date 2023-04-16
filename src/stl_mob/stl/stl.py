@@ -261,8 +261,8 @@ def inside_rectangle_formula(bounds, y1_index, y2_index, d, name=None):
 
     # set the names
     if name is not None:
-        inside_rectangle.__str__ = lambda: name
-        inside_rectangle.__repr__ = lambda: name
+        inside_rectangle.__str__ = lambda: str(name)
+        inside_rectangle.__repr__ = lambda: str(name)
 
     return inside_rectangle
 
@@ -313,7 +313,7 @@ def outside_rectangle_formula(bounds, y1_index, y2_index, d, name=None):
 
     # set the names
     if name is not None:
-        outside_rectangle.__str__ = lambda: name
-        outside_rectangle.__repr__ = lambda: name
+        outside_rectangle.__str__ = lambda: str(name)
+        outside_rectangle.__repr__ = lambda: str(name)
 
     return outside_rectangle
