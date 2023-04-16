@@ -10,7 +10,7 @@ from stl_mob.stl.stl import STL, inside_rectangle_formula, outside_rectangle_for
 
 
 class Obstacle:
-    def __init__(self, pos: np.ndarray, size: np.ndarray, keepout: float = 0.1):
+    def __init__(self, pos: np.ndarray, size: np.ndarray, keepout: float = 0.0):
         self.pos = pos
         self.size = size
         self.keepout = keepout
