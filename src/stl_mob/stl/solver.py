@@ -257,6 +257,7 @@ class StlpySolver:
                             total_time: int,
                             solver_name="gurobi",
                             u_bound: tuple = (-20., 20.),
+                            x_bound: tuple = (-10., 10.),
                             rho_min: float = 0.2,
                             time_limit=None):
         if solver_name == "gurobi":
@@ -269,6 +270,7 @@ class StlpySolver:
             Q=np.diag(0.0 * np.random.random(self.space_dim)), R=np.eye(self.space_dim))
         solver.AddControlBounds(*u_bound)
         solver.AddRobustnessConstraint(rho_min=rho_min)
+        solver.AddStateBounds(*x_bound)
         x, u, rho, solve_t = solver.Solve(time_limit=time_limit)
 
         info = dict(u=u, rho=rho, solve_t=solve_t)
